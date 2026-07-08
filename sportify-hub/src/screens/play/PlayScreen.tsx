@@ -6,7 +6,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { subscribeToGames, joinGameInDB } from '../../services/firebaseService';
+import { subscribeToGames, getNearbyGamesFromDB, joinGameInDB } from '../../services/firebaseService';
+import { getCurrentCoords } from '../../services/locationService';
 import { useAuth } from '../../context/AuthContext';
 import { colors } from '../../theme/colors';
 import GlassCard from '../../components/ui/GlassCard';
@@ -30,14 +31,29 @@ export default function PlayScreen() {
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [distanceById, setDistanceById] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    (async () => {
+      const { coords } = await getCurrentCoords();
+      const nearby = await getNearbyGamesFromDB(coords.latitude, coords.longitude, 20000);
+      const map: Record<string, number> = {};
+      nearby.forEach((g: any) => { if (typeof g.distanceKm === 'number') map[g.id] = g.distanceKm; });
+      setDistanceById(map);
+    })();
+
     const unsubscribe = subscribeToGames(data => {
       setGames(data);
       setLoading(false);
     });
     return unsubscribe;
   }, []);
+
+  const sortedGames = [...games].sort((a, b) => {
+    const da = distanceById[a.id] ?? Infinity;
+    const db = distanceById[b.id] ?? Infinity;
+    return da - db;
+  });
 
   const handleJoin = async (game: any) => {
     const uid = user?.uid || 'mock-uid';
@@ -102,6 +118,14 @@ export default function PlayScreen() {
             <Ionicons name="location-outline" size={14} color={colors.textMuted} />
             <Text style={styles.detailText}>{item.location || 'Elite Turf'}</Text>
           </View>
+          {typeof distanceById[item.id] === 'number' && (
+            <View style={styles.detailItem}>
+              <Ionicons name="navigate-outline" size={14} color={colors.secondary} />
+              <Text style={[styles.detailText, { color: colors.secondary, fontWeight: '700' }]}>
+                {distanceById[item.id]} km away
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Player fill bar */}
@@ -165,7 +189,7 @@ export default function PlayScreen() {
         </View>
       ) : (
         <FlatList
-          data={games}
+          data={sortedGames}
           keyExtractor={item => item.id}
           renderItem={renderGame}
           contentContainerStyle={styles.list}

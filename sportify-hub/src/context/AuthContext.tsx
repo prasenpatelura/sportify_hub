@@ -14,6 +14,8 @@ export interface UserProfile {
   matches: number;
   winRate: string;
   tournaments: number;
+  phone?: string;
+  phoneVerified?: boolean;
 }
 
 interface MockUser {
@@ -29,6 +31,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signInDemo: () => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (patch: Partial<UserProfile>) => Promise<void>;
 }
 
 const STORAGE_KEY = 'sportify_auth';
@@ -59,6 +62,8 @@ const toProfile = (data: any): UserProfile => ({
   matches: data.matchesPlayed ?? data.matches ?? 0,
   winRate: data.winRate !== undefined ? `${Math.round(data.winRate)}%` : '0%',
   tournaments: data.tournaments ?? 0,
+  phone: data.phone,
+  phoneVerified: data.phoneVerified ?? false,
 });
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -120,8 +125,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await AsyncStorage.removeItem(STORAGE_KEY);
   };
 
+  const updateProfile = async (patch: Partial<UserProfile>) => {
+    setUserProfile(prev => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      AsyncStorage.getItem(STORAGE_KEY).then(raw => {
+        const token = raw ? JSON.parse(raw).token : null;
+        persist(token, next);
+      });
+      return next;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, signIn, signUp, signInDemo, logout }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, signIn, signUp, signInDemo, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

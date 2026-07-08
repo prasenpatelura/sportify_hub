@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { getVenueDetails } from '../../services/api';
+import { getVenueDetailsFromDB } from '../../services/firebaseService';
 import { colors } from '../../theme/colors';
 import GlassCard from '../../components/ui/GlassCard';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,14 +11,16 @@ export default function VenueDetailsScreen({ route, navigation }: any) {
   const { venueId } = route.params;
   const [venue, setVenue] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const data = await getVenueDetails(venueId);
+        const data = await getVenueDetailsFromDB(venueId);
         setVenue(data);
       } catch (e) {
         console.error(e);
+        setError(true);
       } finally {
         setLoading(false);
       }
@@ -30,6 +32,18 @@ export default function VenueDetailsScreen({ route, navigation }: any) {
     return (
       <View style={[styles.container, styles.center]}>
         <ActivityIndicator size="large" color={colors.secondary} />
+      </View>
+    );
+  }
+
+  if (error || !venue) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Ionicons name="alert-circle-outline" size={48} color={colors.textMuted} />
+        <Text style={{ color: colors.textMuted, marginTop: 12 }}>Could not load this venue.</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 16 }}>
+          <Text style={{ color: colors.secondary, fontWeight: '700' }}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }

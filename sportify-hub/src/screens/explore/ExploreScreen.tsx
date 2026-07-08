@@ -6,7 +6,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { getVenuesFromDB } from '../../services/firebaseService';
+import { getVenuesFromDB, getNearbyVenuesFromDB } from '../../services/firebaseService';
+import { getCurrentCoords } from '../../services/locationService';
 import { colors } from '../../theme/colors';
 import GlassCard from '../../components/ui/GlassCard';
 
@@ -17,13 +18,18 @@ export default function ExploreScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [usingLocation, setUsingLocation] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        setVenues(await getVenuesFromDB());
+        const { coords, usingFallback } = await getCurrentCoords();
+        const nearby = await getNearbyVenuesFromDB(coords.latitude, coords.longitude, 20000);
+        setUsingLocation(!usingFallback);
+        setVenues(nearby.length ? nearby : await getVenuesFromDB());
       } catch (e) {
         console.error(e);
+        setVenues(await getVenuesFromDB());
       } finally {
         setLoading(false);
       }
@@ -48,10 +54,12 @@ export default function ExploreScreen({ navigation }: any) {
           <Image source={{ uri: item.image + '?w=800' }} style={styles.img} />
           <LinearGradient colors={['transparent', 'rgba(2,6,23,0.5)']} style={StyleSheet.absoluteFill} />
           {/* Distance badge */}
-          <View style={styles.distanceBadge}>
-            <Ionicons name="location" size={11} color={colors.secondary} />
-            <Text style={styles.distanceText}>{(Math.random() * 14 + 1).toFixed(1)} km</Text>
-          </View>
+          {typeof item.distanceKm === 'number' && (
+            <View style={styles.distanceBadge}>
+              <Ionicons name="location" size={11} color={colors.secondary} />
+              <Text style={styles.distanceText}>{item.distanceKm} km</Text>
+            </View>
+          )}
           {/* Rating badge */}
           <View style={styles.ratingBadge}>
             <Ionicons name="star" size={11} color="#fbbf24" />
@@ -94,7 +102,9 @@ export default function ExploreScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Explore</Text>
-        <Text style={styles.subtitle}>{filtered.length} venues near you</Text>
+        <Text style={styles.subtitle}>
+          {filtered.length} venues near you {usingLocation ? '' : '(enable location for real distances)'}
+        </Text>
       </View>
 
       {/* Search */}

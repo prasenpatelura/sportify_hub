@@ -16,7 +16,7 @@ const STATUS_CONFIG: Record<string, { color: string; icon: keyof typeof Ionicons
   Cancelled: { color: colors.error, icon: 'close-circle' },
 };
 
-export default function ActivityScreen() {
+export default function ActivityScreen({ navigation }: any) {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +41,7 @@ export default function ActivityScreen() {
   const renderBooking = ({ item }: { item: any }) => {
     const { color, icon } = STATUS_CONFIG[item.status] || STATUS_CONFIG.Pending;
     return (
+      <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.navigate('BookingDetails', { bookingId: item.id })}>
       <GlassCard style={styles.card}>
         {/* Status header */}
         <View style={styles.cardTop}>
@@ -91,6 +92,7 @@ export default function ActivityScreen() {
           </View>
         )}
       </GlassCard>
+      </TouchableOpacity>
     );
   };
 

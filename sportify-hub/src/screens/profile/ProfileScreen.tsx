@@ -12,7 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }: any) {
   const { userProfile, logout } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -30,12 +30,18 @@ export default function ProfileScreen() {
   const xpPercent = userProfile ? userProfile.xp / userProfile.nextLevelXp : 0;
 
   const menuItems = [
-    { icon: 'person-outline', label: 'Edit Profile', color: colors.secondary },
-    { icon: 'trophy-outline', label: 'My Tournaments', color: '#f59e0b' },
-    { icon: 'wallet-outline', label: 'Payments & Subscriptions', color: '#10b981' },
-    { icon: 'notifications-outline', label: 'Notifications', color: colors.primary },
-    { icon: 'shield-checkmark-outline', label: 'Privacy & Security', color: '#8b5cf6' },
-    { icon: 'help-circle-outline', label: 'Help & Support', color: colors.textMuted },
+    { icon: 'person-outline', label: 'Edit Profile', color: colors.secondary, onPress: undefined },
+    {
+      icon: userProfile?.phoneVerified ? 'checkmark-circle' : 'call-outline',
+      label: userProfile?.phoneVerified ? `Phone Verified · ${userProfile?.phone}` : 'Verify Phone Number',
+      color: userProfile?.phoneVerified ? '#10b981' : '#f59e0b',
+      onPress: () => navigation.navigate('VerifyPhone'),
+    },
+    { icon: 'trophy-outline', label: 'My Tournaments', color: '#f59e0b', onPress: undefined },
+    { icon: 'wallet-outline', label: 'Payments & Subscriptions', color: '#10b981', onPress: undefined },
+    { icon: 'notifications-outline', label: 'Notifications', color: colors.primary, onPress: undefined },
+    { icon: 'shield-checkmark-outline', label: 'Privacy & Security', color: '#8b5cf6', onPress: undefined },
+    { icon: 'help-circle-outline', label: 'Help & Support', color: colors.textMuted, onPress: undefined },
   ];
 
   return (
@@ -107,7 +113,7 @@ export default function ProfileScreen() {
           <GlassCard style={styles.menuCard}>
             <Text style={styles.menuSectionTitle}>ACCOUNT</Text>
             {menuItems.map((item, idx) => (
-              <TouchableOpacity key={item.label} style={[styles.menuItem, idx < menuItems.length - 1 && styles.menuItemBorder]}>
+              <TouchableOpacity key={item.label} onPress={item.onPress} disabled={!item.onPress} style={[styles.menuItem, idx < menuItems.length - 1 && styles.menuItemBorder]}>
                 <View style={[styles.menuIconBox, { backgroundColor: `${item.color}14` }]}>
                   <Ionicons name={item.icon as any} size={19} color={item.color} />
                 </View>

@@ -1,9 +1,9 @@
-// All data calls go through the matchify Express backend.
+// All data calls go through the Express backend in ./backend.
 // Falls back to mock data when the backend is not reachable.
 
 import {
-  apiGetVenues, apiGetVenueById, apiGetGames,
-  apiJoinGame, apiCreateBooking, apiGetUserBookings,
+  apiGetVenues, apiGetVenueById, apiGetNearbyVenues, apiGetGames, apiGetNearbyGames,
+  apiJoinGame, apiCreateBooking, apiGetUserBookings, apiGetBookingById,
 } from './backendApi';
 import { venues as mockVenues, games as mockGames, bookings as mockBookings } from '../mock/data';
 
@@ -17,6 +17,7 @@ const normaliseVenue = (v: any) => ({
   image: (v.images && v.images[0]) || v.image || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800',
   sports: v.sports || [],
   availableSlots: v.availableSlots || [],
+  distanceKm: v.distanceKm,
 });
 
 const normaliseGame = (g: any) => ({
@@ -29,6 +30,7 @@ const normaliseGame = (g: any) => ({
   players: g.players || [],
   maxPlayers: g.maxPlayers || 10,
   status: g.status || 'open',
+  distanceKm: g.distanceKm,
 });
 
 let _listeners: Array<(games: any[]) => void> = [];
@@ -41,6 +43,17 @@ export const seedDatabase = async () => {};
 export const getVenuesFromDB = async (): Promise<any[]> => {
   try {
     const data = await apiGetVenues();
+    return (Array.isArray(data) ? data : []).map(normaliseVenue);
+  } catch {
+    return mockVenues.map(normaliseVenue);
+  }
+};
+
+// Falls back to sorting the mock/full venue list by nothing (no coords on mock
+// data) rather than throwing, so the screen still renders something offline.
+export const getNearbyVenuesFromDB = async (lat: number, lng: number, radiusMeters = 10000): Promise<any[]> => {
+  try {
+    const data = await apiGetNearbyVenues(lat, lng, radiusMeters);
     return (Array.isArray(data) ? data : []).map(normaliseVenue);
   } catch {
     return mockVenues.map(normaliseVenue);
@@ -62,6 +75,15 @@ export const getVenueDetailsFromDB = async (id: string): Promise<any> => {
 export const getGamesFromDB = async (): Promise<any[]> => {
   try {
     const data = await apiGetGames();
+    return (Array.isArray(data) ? data : []).map(normaliseGame);
+  } catch {
+    return mockGames.map(normaliseGame);
+  }
+};
+
+export const getNearbyGamesFromDB = async (lat: number, lng: number, radiusMeters = 10000): Promise<any[]> => {
+  try {
+    const data = await apiGetNearbyGames(lat, lng, radiusMeters);
     return (Array.isArray(data) ? data : []).map(normaliseGame);
   } catch {
     return mockGames.map(normaliseGame);
@@ -108,7 +130,8 @@ export const bookSlotInDB = async (
   timeSlot: string
 ): Promise<any> => {
   try {
-    return await apiCreateBooking({ userId, venueId, date, timeSlot });
+    const booking = await apiCreateBooking({ userId, venueId, date, timeSlot });
+    return { ...booking, id: booking._id || booking.id };
   } catch {
     return { id: `b${Date.now()}`, userId, venueId, venueName, date, timeSlot, status: 'Confirmed' };
   }
@@ -127,5 +150,16 @@ export const getUserBookingsFromDB = async (userId: string): Promise<any[]> => {
       ...b,
       venue: mockVenues.find(v => v.id === b.venueId),
     }));
+  }
+};
+
+export const getBookingDetailsFromDB = async (id: string): Promise<any> => {
+  try {
+    const b = await apiGetBookingById(id);
+    return { ...b, id: b._id || b.id, venue: b.venueId ? normaliseVenue(b.venueId) : null };
+  } catch {
+    const b = mockBookings.find((x) => x.id === id);
+    if (!b) throw new Error('Booking not found');
+    return { ...b, venue: mockVenues.find((v) => v.id === b.venueId) };
   }
 };

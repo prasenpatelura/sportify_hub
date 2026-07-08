@@ -2,23 +2,28 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { bookSlot } from '../../services/api';
+import { bookSlotInDB } from '../../services/firebaseService';
+import { useAuth } from '../../context/AuthContext';
 import { colors } from '../../theme/colors';
 import GlassCard from '../../components/ui/GlassCard';
 
 const TIME_SLOTS = ['06:00 AM', '07:00 AM', '08:00 AM', '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM', '09:00 PM'];
-const DATES = [
-  { day: 'Mon', date: '20' },
-  { day: 'Tue', date: '21' },
-  { day: 'Wed', date: '22' },
-  { day: 'Thu', date: '23' },
-  { day: 'Fri', date: '24' },
-  { day: 'Sat', date: '25' },
-];
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+const nextSevenDays = () => {
+  const today = new Date();
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    return { day: DAY_NAMES[d.getDay()], date: String(d.getDate()), iso: d.toISOString().slice(0, 10) };
+  });
+};
 
 export default function BookingScreen({ route, navigation }: any) {
   const { venueId, venueName } = route.params;
-  const [selectedDate, setSelectedDate] = useState('20');
+  const { user } = useAuth();
+  const [dates] = useState(nextSevenDays);
+  const [selectedIso, setSelectedIso] = useState(dates[0].iso);
   const [selectedSlot, setSelectedSlot] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,10 +34,10 @@ export default function BookingScreen({ route, navigation }: any) {
     }
     setLoading(true);
     try {
-      await bookSlot(venueId, `2026-04-${selectedDate}`, selectedSlot);
+      const booking = await bookSlotInDB(user?.uid || 'mock-uid', venueId, venueName, selectedIso, selectedSlot);
       Alert.alert('Success', 'Your booking is confirmed!', [
-        { text: 'View Activity', onPress: () => navigation.navigate('MainApp', { screen: 'Activity' }) },
-        { text: 'OK', onPress: () => navigation.goBack() }
+        { text: 'View Details', onPress: () => navigation.replace('BookingDetails', { bookingId: booking.id }) },
+        { text: 'OK', onPress: () => navigation.navigate('MainApp', { screen: 'Activity' }) },
       ]);
     } catch (e) {
       console.error(e);
@@ -63,14 +68,14 @@ export default function BookingScreen({ route, navigation }: any) {
         
         <Text style={styles.sectionTitle}>Select Date</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.datesContainer}>
-          {DATES.map((d) => (
-            <TouchableOpacity 
-              key={d.date} 
-              onPress={() => setSelectedDate(d.date)}
-              style={[styles.dateCard, selectedDate === d.date && styles.selectedDateCard]}
+          {dates.map((d) => (
+            <TouchableOpacity
+              key={d.iso}
+              onPress={() => setSelectedIso(d.iso)}
+              style={[styles.dateCard, selectedIso === d.iso && styles.selectedDateCard]}
             >
-              <Text style={[styles.dayText, selectedDate === d.date && styles.selectedText]}>{d.day}</Text>
-              <Text style={[styles.dateText, selectedDate === d.date && styles.selectedText]}>{d.date}</Text>
+              <Text style={[styles.dayText, selectedIso === d.iso && styles.selectedText]}>{d.day}</Text>
+              <Text style={[styles.dateText, selectedIso === d.iso && styles.selectedText]}>{d.date}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -92,7 +97,7 @@ export default function BookingScreen({ route, navigation }: any) {
           <Text style={styles.summaryTitle}>Booking Summary</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Date</Text>
-            <Text style={styles.summaryValue}>April {selectedDate}, 2026</Text>
+            <Text style={styles.summaryValue}>{selectedIso}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Time</Text>

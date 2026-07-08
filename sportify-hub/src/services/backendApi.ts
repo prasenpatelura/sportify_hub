@@ -1,5 +1,4 @@
-// Shared REST client — points to the matchify Express backend (port 5000)
-// sportify-hub and matchify/frontend both use the same API.
+// REST client — points to the Express + Firestore API in ./backend (port 5000).
 
 const BASE_URL = 'http://192.168.1.16:5000/api';
 
@@ -53,9 +52,19 @@ export const apiGetVenueById = async (id: string) => {
   return handleResponse(res);
 };
 
+export const apiGetNearbyVenues = async (lat: number, lng: number, radius = 10000) => {
+  const res = await fetch(`${BASE_URL}/venues/nearby?lat=${lat}&lng=${lng}&radius=${radius}`, { headers: headers() });
+  return handleResponse(res);
+};
+
 // ─── Games ───────────────────────────────────────────────────────────────────
 export const apiGetGames = async () => {
   const res = await fetch(`${BASE_URL}/games`, { headers: headers() });
+  return handleResponse(res);
+};
+
+export const apiGetNearbyGames = async (lat: number, lng: number, radius = 10000) => {
+  const res = await fetch(`${BASE_URL}/games?lat=${lat}&lng=${lng}&radius=${radius}`, { headers: headers() });
   return handleResponse(res);
 };
 
@@ -78,5 +87,25 @@ export const apiCreateBooking = async (data: {
 
 export const apiGetUserBookings = async (userId: string) => {
   const res = await fetch(`${BASE_URL}/bookings/user/${userId}`, { headers: headers() });
+  return handleResponse(res);
+};
+
+export const apiGetBookingById = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/bookings/${id}`, { headers: headers() });
+  return handleResponse(res);
+};
+
+// ─── OTP / phone verification ─────────────────────────────────────────────────
+export const apiSendOtp = async (phone: string) => {
+  const res = await fetch(`${BASE_URL}/otp/send`, {
+    method: 'POST', headers: headers(), body: JSON.stringify({ phone }),
+  });
+  return handleResponse(res);
+};
+
+export const apiVerifyOtp = async (phone: string, code: string, userId?: string) => {
+  const res = await fetch(`${BASE_URL}/otp/verify`, {
+    method: 'POST', headers: headers(), body: JSON.stringify({ phone, code, userId }),
+  });
   return handleResponse(res);
 };
