@@ -1,6 +1,6 @@
-// REST client — points to the Express + Firestore API in ./backend (port 5000).
+// REST client — points to the Express + Firestore API in ./backend, hosted on Vercel.
 
-const BASE_URL = 'http://192.168.1.135:5000/api';
+const BASE_URL = 'https://sportify-backend-neon.vercel.app/api';
 
 let _token: string | null = null;
 
