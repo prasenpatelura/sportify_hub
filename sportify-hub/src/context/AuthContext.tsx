@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiLogin, apiRegister, apiPhoneAuth, setAuthToken } from '../services/backendApi';
+import { apiPhoneAuth, setAuthToken } from '../services/backendApi';
 
 export interface UserProfile {
   uid: string;
@@ -27,8 +27,6 @@ interface AuthContextType {
   user: MockUser | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
   signInWithPhone: (phone: string, code: string, name?: string) => Promise<void>;
   signInDemo: () => Promise<void>;
   logout: () => Promise<void>;
@@ -92,26 +90,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ token, profile }));
   };
 
-  const signIn = async (email: string, password: string) => {
-    const data = await apiLogin(email, password);
-    const token = data.token;
-    const profile = toProfile(data._id ? data : { ...data.user || data, _id: data._id });
-    setAuthToken(token);
-    setUser({ uid: profile.uid, email: profile.email });
-    setUserProfile(profile);
-    await persist(token, profile);
-  };
-
-  const signUp = async (email: string, password: string, name: string) => {
-    const data = await apiRegister(name, email, password);
-    const token = data.token;
-    const profile = toProfile(data);
-    setAuthToken(token);
-    setUser({ uid: profile.uid, email: profile.email });
-    setUserProfile(profile);
-    await persist(token, profile);
-  };
-
   const signInWithPhone = async (phone: string, code: string, name?: string) => {
     const data = await apiPhoneAuth(phone, code, name);
     const token = data.token;
@@ -149,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, signIn, signUp, signInWithPhone, signInDemo, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, signInWithPhone, signInDemo, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

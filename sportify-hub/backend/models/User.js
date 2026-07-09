@@ -1,4 +1,3 @@
-const bcrypt = require('bcryptjs');
 const { db } = require('../config/firebase');
 const { FieldValue, FieldPath } = require('firebase-admin/firestore');
 const { docToObject } = require('../utils/serialize');
@@ -12,32 +11,6 @@ function omitPassword(user) {
   if (!user) return user;
   const { password, ...rest } = user;
   return rest;
-}
-
-async function create({ name, email, password, sports = [], skillLevel = 'Beginner' }) {
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const now = new Date();
-  const ref = await col().add({
-    name,
-    email,
-    password: hashedPassword,
-    sports,
-    skillLevel,
-    xp: 0,
-    level: 1,
-    streak: 0,
-    matchesPlayed: 0,
-    winRate: 0,
-    badges: [],
-    createdAt: now,
-    updatedAt: now,
-  });
-  return toUser(await ref.get());
-}
-
-async function findByEmail(email) {
-  const snap = await col().where('email', '==', email).limit(1).get();
-  return snap.empty ? null : toUser(snap.docs[0]);
 }
 
 async function findByPhone(phone) {
@@ -105,10 +78,6 @@ async function incrementXpAndMatches(ids, { xp = 0, matchesPlayed = 0 }) {
   await batch.commit();
 }
 
-async function comparePassword(user, entered) {
-  return bcrypt.compare(entered, user.password);
-}
-
 // Firestore has no native geo-radius query, so nearby users are fetched by the
 // locationEnabled flag and filtered/sorted by haversine distance in memory.
 // Fine at this app's scale; revisit with a geohash index if the user base grows large.
@@ -132,15 +101,12 @@ async function findNearby({ lat, lng, radiusMeters, excludeUserId }) {
 }
 
 module.exports = {
-  create,
-  findByEmail,
   findByPhone,
   createWithPhone,
   findById,
   findByIds,
   updateById,
   incrementXpAndMatches,
-  comparePassword,
   omitPassword,
   findNearby,
 };

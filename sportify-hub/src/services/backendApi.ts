@@ -22,20 +22,6 @@ const handleResponse = async (res: Response) => {
 };
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
-export const apiLogin = async (email: string, password: string) => {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
-    method: 'POST', headers: headers(), body: JSON.stringify({ email, password }),
-  });
-  return handleResponse(res);
-};
-
-export const apiRegister = async (name: string, email: string, password: string) => {
-  const res = await fetch(`${BASE_URL}/auth/register`, {
-    method: 'POST', headers: headers(), body: JSON.stringify({ name, email, password }),
-  });
-  return handleResponse(res);
-};
-
 export const apiPhoneAuth = async (phone: string, code: string, name?: string) => {
   const res = await fetch(`${BASE_URL}/auth/phone-auth`, {
     method: 'POST', headers: headers(), body: JSON.stringify({ phone, code, name }),
