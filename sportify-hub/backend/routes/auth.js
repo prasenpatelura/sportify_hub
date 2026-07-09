@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const Otp = require('../models/Otp');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
@@ -11,9 +10,7 @@ const generateToken = (id) => {
 const authResponse = (user) => ({
   _id: user._id,
   name: user.name,
-  email: user.email,
-  phone: user.phone,
-  phoneVerified: user.phoneVerified,
+  username: user.username,
   xp: user.xp,
   level: user.level,
   streak: user.streak,
@@ -23,20 +20,29 @@ const authResponse = (user) => ({
   token: generateToken(user._id),
 });
 
-// Phone + OTP is the primary sign-up/sign-in flow: verifying a phone number
-// logs the user in if that number already has an account, or creates one
-// (using `name`) if it doesn't — no separate register/login step needed.
-router.post('/phone-auth', async (req, res) => {
-  const { phone, code, name } = req.body;
-  if (!phone || !code) return res.status(400).json({ message: 'phone and code are required' });
+router.post('/signup', async (req, res) => {
+  const { name, username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ message: 'username and password are required' });
 
   try {
-    const result = await Otp.verify(phone, code);
-    if (!result.ok) return res.status(400).json({ message: result.reason });
+    const existing = await User.findByUsername(username);
+    if (existing) return res.status(409).json({ message: 'Username is already taken' });
 
-    let user = await User.findByPhone(phone);
-    if (!user) {
-      user = await User.createWithPhone({ name, phone });
+    const user = await User.createWithUsername({ name, username, password });
+    res.json(authResponse(user));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ message: 'username and password are required' });
+
+  try {
+    const user = await User.findByUsername(username);
+    if (!user || !(await User.verifyPassword(user, password))) {
+      return res.status(401).json({ message: 'Invalid username or password' });
     }
 
     res.json(authResponse(user));

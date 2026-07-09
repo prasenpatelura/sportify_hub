@@ -22,9 +22,16 @@ const handleResponse = async (res: Response) => {
 };
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
-export const apiPhoneAuth = async (phone: string, code: string, name?: string) => {
-  const res = await fetch(`${BASE_URL}/auth/phone-auth`, {
-    method: 'POST', headers: headers(), body: JSON.stringify({ phone, code, name }),
+export const apiSignup = async (username: string, password: string, name?: string) => {
+  const res = await fetch(`${BASE_URL}/auth/signup`, {
+    method: 'POST', headers: headers(), body: JSON.stringify({ username, password, name }),
+  });
+  return handleResponse(res);
+};
+
+export const apiLogin = async (username: string, password: string) => {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: 'POST', headers: headers(), body: JSON.stringify({ username, password }),
   });
   return handleResponse(res);
 };
@@ -85,20 +92,5 @@ export const apiGetUserBookings = async (userId: string) => {
 
 export const apiGetBookingById = async (id: string) => {
   const res = await fetch(`${BASE_URL}/bookings/${id}`, { headers: headers() });
-  return handleResponse(res);
-};
-
-// ─── OTP / phone verification ─────────────────────────────────────────────────
-export const apiSendOtp = async (phone: string) => {
-  const res = await fetch(`${BASE_URL}/otp/send`, {
-    method: 'POST', headers: headers(), body: JSON.stringify({ phone }),
-  });
-  return handleResponse(res);
-};
-
-export const apiVerifyOtp = async (phone: string, code: string, userId?: string) => {
-  const res = await fetch(`${BASE_URL}/otp/verify`, {
-    method: 'POST', headers: headers(), body: JSON.stringify({ phone, code, userId }),
-  });
   return handleResponse(res);
 };

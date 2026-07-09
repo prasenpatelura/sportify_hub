@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiPhoneAuth, setAuthToken } from '../services/backendApi';
+import { apiSignup, apiLogin, setAuthToken } from '../services/backendApi';
 
 export interface UserProfile {
   uid: string;
   name: string;
-  email: string;
+  username: string;
   avatar?: string;
   level: number;
   xp: number;
@@ -14,20 +14,19 @@ export interface UserProfile {
   matches: number;
   winRate: string;
   tournaments: number;
-  phone?: string;
-  phoneVerified?: boolean;
 }
 
 interface AuthUser {
   uid: string;
-  email: string;
+  username: string;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  signInWithPhone: (phone: string, code: string, name?: string) => Promise<void>;
+  signUp: (username: string, password: string, name?: string) => Promise<void>;
+  signIn: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (patch: Partial<UserProfile>) => Promise<void>;
 }
@@ -37,7 +36,7 @@ const STORAGE_KEY = 'sportify_auth';
 const toProfile = (data: any): UserProfile => ({
   uid: data._id || data.uid || 'unknown',
   name: data.name || 'Player',
-  email: data.email || '',
+  username: data.username || '',
   avatar: data.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
   level: data.level ?? 1,
   xp: data.xp ?? 0,
@@ -46,8 +45,6 @@ const toProfile = (data: any): UserProfile => ({
   matches: data.matchesPlayed ?? data.matches ?? 0,
   winRate: data.winRate !== undefined ? `${Math.round(data.winRate)}%` : '0%',
   tournaments: data.tournaments ?? 0,
-  phone: data.phone,
-  phoneVerified: data.phoneVerified ?? false,
 });
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -63,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (raw) {
           const { token, profile } = JSON.parse(raw);
           setAuthToken(token);
-          setUser({ uid: profile.uid, email: profile.email });
+          setUser({ uid: profile.uid, username: profile.username });
           setUserProfile(profile);
         }
       })
@@ -75,14 +72,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ token, profile }));
   };
 
-  const signInWithPhone = async (phone: string, code: string, name?: string) => {
-    const data = await apiPhoneAuth(phone, code, name);
+  const applyAuthResponse = async (data: any) => {
     const token = data.token;
     const profile = toProfile(data);
     setAuthToken(token);
-    setUser({ uid: profile.uid, email: profile.email });
+    setUser({ uid: profile.uid, username: profile.username });
     setUserProfile(profile);
     await persist(token, profile);
+  };
+
+  const signUp = async (username: string, password: string, name?: string) => {
+    const data = await apiSignup(username, password, name);
+    await applyAuthResponse(data);
+  };
+
+  const signIn = async (username: string, password: string) => {
+    const data = await apiLogin(username, password);
+    await applyAuthResponse(data);
   };
 
   const logout = async () => {
@@ -105,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, signInWithPhone, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, signUp, signIn, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

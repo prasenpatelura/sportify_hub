@@ -12,7 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400';
 
-export default function ProfileScreen({ navigation }: any) {
+export default function ProfileScreen() {
   const { userProfile, logout } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -31,12 +31,6 @@ export default function ProfileScreen({ navigation }: any) {
 
   const menuItems = [
     { icon: 'person-outline', label: 'Edit Profile', color: colors.secondary, onPress: undefined },
-    {
-      icon: userProfile?.phoneVerified ? 'checkmark-circle' : 'call-outline',
-      label: userProfile?.phoneVerified ? `Phone Verified · ${userProfile?.phone}` : 'Verify Phone Number',
-      color: userProfile?.phoneVerified ? '#10b981' : '#f59e0b',
-      onPress: () => navigation.navigate('VerifyPhone'),
-    },
     { icon: 'trophy-outline', label: 'My Tournaments', color: '#f59e0b', onPress: undefined },
     { icon: 'wallet-outline', label: 'Payments & Subscriptions', color: '#10b981', onPress: undefined },
     { icon: 'notifications-outline', label: 'Notifications', color: colors.primary, onPress: undefined },
@@ -67,7 +61,7 @@ export default function ProfileScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
             <Text style={styles.name}>{userProfile?.name || 'Player'}</Text>
-            <Text style={styles.email}>{userProfile?.email}</Text>
+            <Text style={styles.email}>@{userProfile?.username}</Text>
             <View style={styles.levelPill}>
               <LinearGradient colors={[colors.primary, colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.levelPillGrad}>
                 <Ionicons name="flash" size={12} color="#fff" />

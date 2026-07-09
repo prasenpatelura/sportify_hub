@@ -7,15 +7,14 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-import { apiSendOtp } from '../../services/backendApi';
 import { colors } from '../../theme/colors';
 
 export default function LoginScreen() {
-  const { signInWithPhone } = useAuth();
+  const { signIn, signUp } = useAuth();
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
-  const [step, setStep] = useState<'phone' | 'code'>('phone');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -38,40 +37,27 @@ export default function LoginScreen() {
     ).start();
   }, []);
 
-  const handleSendCode = async () => {
-    if (!phone.trim()) {
-      Alert.alert('Missing Number', 'Please enter your phone number.');
+  const handleSubmit = async () => {
+    if (!username.trim() || !password.trim()) {
+      Alert.alert('Missing Info', 'Please enter a username and password.');
       return;
     }
     setLoading(true);
     try {
-      await apiSendOtp(phone.trim());
-      setStep('code');
+      if (mode === 'signup') {
+        await signUp(username.trim(), password.trim(), name.trim() || undefined);
+      } else {
+        await signIn(username.trim(), password.trim());
+      }
     } catch (e: any) {
-      Alert.alert('Could Not Send Code', e.message || 'Could not connect to server. Please try again.');
+      Alert.alert(mode === 'signup' ? 'Could Not Sign Up' : 'Could Not Log In', e.message || 'Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerify = async () => {
-    if (!code.trim()) {
-      Alert.alert('Missing Code', 'Please enter the 6-digit code.');
-      return;
-    }
-    setLoading(true);
-    try {
-      await signInWithPhone(phone.trim(), code.trim(), name.trim() || undefined);
-    } catch (e: any) {
-      Alert.alert('Verification Failed', e.message || 'Incorrect or expired code.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const changeNumber = () => {
-    setStep('phone');
-    setCode('');
+  const toggleMode = () => {
+    setMode(mode === 'login' ? 'signup' : 'login');
   };
 
   return (
@@ -104,84 +90,69 @@ export default function LoginScreen() {
         {/* Form card */}
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
           <View style={styles.card}>
-            {step === 'phone' ? (
-              <>
-                <Text style={styles.formTitle}>Welcome</Text>
-                <Text style={styles.formSubtitle}>Sign in or create an account with your phone number</Text>
+            <Text style={styles.formTitle}>{mode === 'signup' ? 'Create Account' : 'Welcome Back'}</Text>
+            <Text style={styles.formSubtitle}>
+              {mode === 'signup' ? 'Sign up with a username and password' : 'Log in with your username and password'}
+            </Text>
 
-                <View style={styles.inputRow}>
-                  <Ionicons name="person-outline" size={18} color={colors.textMuted} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Full Name (for new accounts)"
-                    placeholderTextColor={colors.textMuted}
-                    value={name}
-                    onChangeText={setName}
-                    autoCapitalize="words"
-                  />
-                </View>
-
-                <View style={styles.inputRow}>
-                  <Ionicons name="call-outline" size={18} color={colors.textMuted} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="+91 98765 43210"
-                    placeholderTextColor={colors.textMuted}
-                    value={phone}
-                    onChangeText={setPhone}
-                    keyboardType="phone-pad"
-                  />
-                </View>
-
-                <TouchableOpacity style={styles.mainBtn} onPress={handleSendCode} disabled={loading} activeOpacity={0.85}>
-                  <LinearGradient
-                    colors={[colors.primary, '#2D8B30', colors.secondary]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.mainBtnGrad}
-                  >
-                    {loading
-                      ? <ActivityIndicator color="#fff" />
-                      : <Text style={styles.mainBtnText}>Send OTP</Text>}
-                  </LinearGradient>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <Text style={styles.formTitle}>Enter Verification Code</Text>
-                <Text style={styles.formSubtitle}>Sent to {phone}</Text>
-
-                <View style={styles.inputRow}>
-                  <Ionicons name="keypad-outline" size={18} color={colors.textMuted} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="123456"
-                    placeholderTextColor={colors.textMuted}
-                    value={code}
-                    onChangeText={setCode}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                  />
-                </View>
-
-                <TouchableOpacity style={styles.mainBtn} onPress={handleVerify} disabled={loading} activeOpacity={0.85}>
-                  <LinearGradient
-                    colors={[colors.primary, '#2D8B30', colors.secondary]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.mainBtnGrad}
-                  >
-                    {loading
-                      ? <ActivityIndicator color="#fff" />
-                      : <Text style={styles.mainBtnText}>Verify & Continue</Text>}
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={changeNumber} style={styles.toggleRow}>
-                  <Text style={styles.toggleText}>Change phone number</Text>
-                </TouchableOpacity>
-              </>
+            {mode === 'signup' && (
+              <View style={styles.inputRow}>
+                <Ionicons name="person-outline" size={18} color={colors.textMuted} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Full Name"
+                  placeholderTextColor={colors.textMuted}
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                />
+              </View>
             )}
+
+            <View style={styles.inputRow}>
+              <Ionicons name="at-outline" size={18} color={colors.textMuted} />
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                placeholderTextColor={colors.textMuted}
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.inputRow}>
+              <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor={colors.textMuted}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+            </View>
+
+            <TouchableOpacity style={styles.mainBtn} onPress={handleSubmit} disabled={loading} activeOpacity={0.85}>
+              <LinearGradient
+                colors={[colors.primary, '#2D8B30', colors.secondary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.mainBtnGrad}
+              >
+                {loading
+                  ? <ActivityIndicator color="#fff" />
+                  : <Text style={styles.mainBtnText}>{mode === 'signup' ? 'Sign Up' : 'Log In'}</Text>}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={toggleMode} style={styles.toggleRow}>
+              <Text style={styles.toggleText}>
+                {mode === 'signup' ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
+              </Text>
+            </TouchableOpacity>
 
             {/* Stats strip */}
             <View style={styles.statsStrip}>

@@ -11,7 +11,6 @@ app.use(express.json());
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth',     require('./routes/auth'));
-app.use('/api/otp',      require('./routes/otp'));
 app.use('/api/venues',   require('./routes/venues'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/games',    require('./routes/games'));

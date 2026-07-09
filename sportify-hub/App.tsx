@@ -11,7 +11,6 @@ import LoginScreen from './src/screens/auth/LoginScreen';
 import VenueDetailsScreen from './src/screens/explore/VenueDetailsScreen';
 import BookingScreen from './src/screens/explore/BookingScreen';
 import BookingDetailsScreen from './src/screens/activity/BookingDetailsScreen';
-import VerifyPhoneScreen from './src/screens/profile/VerifyPhoneScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -36,7 +35,6 @@ function AppNavigator() {
           <Stack.Screen name="VenueDetails" component={VenueDetailsScreen} />
           <Stack.Screen name="BookingUI" component={BookingScreen} />
           <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
-          <Stack.Screen name="VerifyPhone" component={VerifyPhoneScreen} />
         </>
       )}
     </Stack.Navigator>

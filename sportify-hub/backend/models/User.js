@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const { db } = require('../config/firebase');
 const { FieldValue, FieldPath } = require('firebase-admin/firestore');
 const { docToObject } = require('../utils/serialize');
@@ -13,17 +14,18 @@ function omitPassword(user) {
   return rest;
 }
 
-async function findByPhone(phone) {
-  const snap = await col().where('phone', '==', phone).limit(1).get();
+async function findByUsername(username) {
+  const snap = await col().where('username', '==', username).limit(1).get();
   return snap.empty ? null : toUser(snap.docs[0]);
 }
 
-async function createWithPhone({ name, phone }) {
+async function createWithUsername({ name, username, password }) {
   const now = new Date();
+  const passwordHash = await bcrypt.hash(password, 10);
   const ref = await col().add({
     name: name || 'Player',
-    phone,
-    phoneVerified: true,
+    username,
+    password: passwordHash,
     sports: [],
     skillLevel: 'Beginner',
     xp: 0,
@@ -36,6 +38,11 @@ async function createWithPhone({ name, phone }) {
     updatedAt: now,
   });
   return toUser(await ref.get());
+}
+
+async function verifyPassword(user, password) {
+  if (!user?.password) return false;
+  return bcrypt.compare(password, user.password);
 }
 
 async function findById(id) {
@@ -101,8 +108,9 @@ async function findNearby({ lat, lng, radiusMeters, excludeUserId }) {
 }
 
 module.exports = {
-  findByPhone,
-  createWithPhone,
+  findByUsername,
+  createWithUsername,
+  verifyPassword,
   findById,
   findByIds,
   updateById,
