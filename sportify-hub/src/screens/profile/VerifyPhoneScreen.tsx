@@ -17,7 +17,6 @@ export default function VerifyPhoneScreen({ navigation }: any) {
   const [code, setCode] = useState('');
   const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [loading, setLoading] = useState(false);
-  const [devCode, setDevCode] = useState<string | null>(null);
 
   const handleSend = async () => {
     if (!phone.trim()) {
@@ -26,8 +25,7 @@ export default function VerifyPhoneScreen({ navigation }: any) {
     }
     setLoading(true);
     try {
-      const res = await apiSendOtp(phone.trim());
-      setDevCode(res.devCode || null);
+      await apiSendOtp(phone.trim());
       setStep('code');
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Could not send OTP.');
@@ -95,14 +93,6 @@ export default function VerifyPhoneScreen({ navigation }: any) {
                 <Ionicons name="shield-checkmark-outline" size={40} color={colors.secondary} style={{ marginBottom: 16, alignSelf: 'center' }} />
                 <Text style={styles.title}>Enter Verification Code</Text>
                 <Text style={styles.subtitle}>Sent to {phone}</Text>
-                {devCode && (
-                  <View style={styles.devBanner}>
-                    <Ionicons name="information-circle-outline" size={16} color="#f59e0b" />
-                    <Text style={styles.devBannerText}>
-                      Demo mode (no SMS provider wired up) — your code is {devCode}
-                    </Text>
-                  </View>
-                )}
                 <View style={styles.inputRow}>
                   <Ionicons name="keypad-outline" size={18} color={colors.textMuted} />
                   <TextInput
@@ -141,8 +131,6 @@ const styles = StyleSheet.create({
   card: { padding: 24 },
   title: { fontSize: 20, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 6 },
   subtitle: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginBottom: 20 },
-  devBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(245,158,11,0.1)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)', borderRadius: 12, padding: 10, marginBottom: 16 },
-  devBannerText: { color: '#f59e0b', fontSize: 12, flex: 1, fontWeight: '600' },
   inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(93,184,64,0.12)', paddingHorizontal: 14, marginBottom: 18, gap: 10 },
   input: { flex: 1, color: colors.text, paddingVertical: 14, fontSize: 15 },
   mainBtn: { borderRadius: 16, overflow: 'hidden' },

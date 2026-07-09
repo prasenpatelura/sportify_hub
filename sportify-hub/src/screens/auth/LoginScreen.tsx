@@ -11,14 +11,12 @@ import { apiSendOtp } from '../../services/backendApi';
 import { colors } from '../../theme/colors';
 
 export default function LoginScreen() {
-  const { signInWithPhone, signInDemo } = useAuth();
+  const { signInWithPhone } = useAuth();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
-  const [devCode, setDevCode] = useState<string | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -47,18 +45,10 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-      const res = await apiSendOtp(phone.trim());
-      setDevCode(res.devCode || null);
+      await apiSendOtp(phone.trim());
       setStep('code');
     } catch (e: any) {
-      Alert.alert(
-        'Could Not Send Code',
-        'Could not connect to server. Please use Demo Mode to explore the app.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Try Demo', onPress: handleDemo },
-        ]
-      );
+      Alert.alert('Could Not Send Code', e.message || 'Could not connect to server. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -79,21 +69,9 @@ export default function LoginScreen() {
     }
   };
 
-  const handleDemo = async () => {
-    setDemoLoading(true);
-    try {
-      await signInDemo();
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Something went wrong.');
-    } finally {
-      setDemoLoading(false);
-    }
-  };
-
   const changeNumber = () => {
     setStep('phone');
     setCode('');
-    setDevCode(null);
   };
 
   return (
@@ -155,7 +133,7 @@ export default function LoginScreen() {
                   />
                 </View>
 
-                <TouchableOpacity style={styles.mainBtn} onPress={handleSendCode} disabled={loading || demoLoading} activeOpacity={0.85}>
+                <TouchableOpacity style={styles.mainBtn} onPress={handleSendCode} disabled={loading} activeOpacity={0.85}>
                   <LinearGradient
                     colors={[colors.primary, '#2D8B30', colors.secondary]}
                     start={{ x: 0, y: 0 }}
@@ -173,13 +151,6 @@ export default function LoginScreen() {
                 <Text style={styles.formTitle}>Enter Verification Code</Text>
                 <Text style={styles.formSubtitle}>Sent to {phone}</Text>
 
-                {devCode && (
-                  <View style={styles.devBanner}>
-                    <Ionicons name="information-circle-outline" size={16} color={colors.warning} />
-                    <Text style={styles.devBannerText}>Demo mode (no SMS provider wired up) — your code is {devCode}</Text>
-                  </View>
-                )}
-
                 <View style={styles.inputRow}>
                   <Ionicons name="keypad-outline" size={18} color={colors.textMuted} />
                   <TextInput
@@ -193,7 +164,7 @@ export default function LoginScreen() {
                   />
                 </View>
 
-                <TouchableOpacity style={styles.mainBtn} onPress={handleVerify} disabled={loading || demoLoading} activeOpacity={0.85}>
+                <TouchableOpacity style={styles.mainBtn} onPress={handleVerify} disabled={loading} activeOpacity={0.85}>
                   <LinearGradient
                     colors={[colors.primary, '#2D8B30', colors.secondary]}
                     start={{ x: 0, y: 0 }}
@@ -221,30 +192,6 @@ export default function LoginScreen() {
                 </View>
               ))}
             </View>
-
-            {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Demo Mode button */}
-            <TouchableOpacity
-              style={styles.demoBtn}
-              onPress={handleDemo}
-              disabled={loading || demoLoading}
-              activeOpacity={0.85}
-            >
-              {demoLoading ? (
-                <ActivityIndicator color={colors.primary} size="small" />
-              ) : (
-                <>
-                  <Ionicons name="flash" size={18} color={colors.primary} />
-                  <Text style={styles.demoBtnText}>Explore in Demo Mode</Text>
-                </>
-              )}
-            </TouchableOpacity>
           </View>
         </Animated.View>
       </ScrollView>
@@ -263,8 +210,6 @@ const styles = StyleSheet.create({
   card: { borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(93,184,64,0.15)', padding: 26, backgroundColor: 'rgba(20,20,20,0.95)' },
   formTitle: { fontSize: 22, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 6 },
   formSubtitle: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginBottom: 24 },
-  devBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(245,158,11,0.1)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)', borderRadius: 12, padding: 10, marginBottom: 16 },
-  devBannerText: { color: colors.warning, fontSize: 12, flex: 1, fontWeight: '600' },
   inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(93,184,64,0.12)', paddingHorizontal: 14, marginBottom: 12, gap: 10 },
   input: { flex: 1, color: colors.text, paddingVertical: 14, fontSize: 15 },
   mainBtn: { borderRadius: 16, overflow: 'hidden', marginTop: 6, elevation: 10, shadowColor: colors.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 18 },
@@ -276,9 +221,4 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
   toggleRow: { alignItems: 'center', paddingTop: 14 },
   toggleText: { color: colors.secondary, fontSize: 14, fontWeight: '700' },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 16, gap: 10 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
-  dividerText: { color: colors.textMuted, fontSize: 12, fontWeight: '600' },
-  demoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 1.5, borderColor: `${colors.primary}50`, backgroundColor: `${colors.primary}10` },
-  demoBtnText: { color: colors.primary, fontSize: 15, fontWeight: '700' },
 });

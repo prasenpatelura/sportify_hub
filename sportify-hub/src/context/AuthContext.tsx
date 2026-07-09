@@ -18,36 +18,21 @@ export interface UserProfile {
   phoneVerified?: boolean;
 }
 
-interface MockUser {
+interface AuthUser {
   uid: string;
   email: string;
 }
 
 interface AuthContextType {
-  user: MockUser | null;
+  user: AuthUser | null;
   userProfile: UserProfile | null;
   loading: boolean;
   signInWithPhone: (phone: string, code: string, name?: string) => Promise<void>;
-  signInDemo: () => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (patch: Partial<UserProfile>) => Promise<void>;
 }
 
 const STORAGE_KEY = 'sportify_auth';
-
-const DEMO_PROFILE: UserProfile = {
-  uid: 'demo_user_001',
-  name: 'Demo Player',
-  email: 'demo@sportifyhub.com',
-  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
-  level: 5,
-  xp: 3200,
-  nextLevelXp: 5000,
-  streak: 7,
-  matches: 24,
-  winRate: '67%',
-  tournaments: 3,
-};
 
 const toProfile = (data: any): UserProfile => ({
   uid: data._id || data.uid || 'unknown',
@@ -68,7 +53,7 @@ const toProfile = (data: any): UserProfile => ({
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<MockUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -100,13 +85,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await persist(token, profile);
   };
 
-  const signInDemo = async () => {
-    setAuthToken('demo_token');
-    setUser({ uid: DEMO_PROFILE.uid, email: DEMO_PROFILE.email });
-    setUserProfile(DEMO_PROFILE);
-    await persist('demo_token', DEMO_PROFILE);
-  };
-
   const logout = async () => {
     setAuthToken(null);
     setUser(null);
@@ -127,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, signInWithPhone, signInDemo, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, signInWithPhone, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
