@@ -40,6 +40,31 @@ async function findByEmail(email) {
   return snap.empty ? null : toUser(snap.docs[0]);
 }
 
+async function findByPhone(phone) {
+  const snap = await col().where('phone', '==', phone).limit(1).get();
+  return snap.empty ? null : toUser(snap.docs[0]);
+}
+
+async function createWithPhone({ name, phone }) {
+  const now = new Date();
+  const ref = await col().add({
+    name: name || 'Player',
+    phone,
+    phoneVerified: true,
+    sports: [],
+    skillLevel: 'Beginner',
+    xp: 0,
+    level: 1,
+    streak: 0,
+    matchesPlayed: 0,
+    winRate: 0,
+    badges: [],
+    createdAt: now,
+    updatedAt: now,
+  });
+  return toUser(await ref.get());
+}
+
 async function findById(id) {
   if (!id) return null;
   return toUser(await col().doc(String(id)).get());
@@ -109,6 +134,8 @@ async function findNearby({ lat, lng, radiusMeters, excludeUserId }) {
 module.exports = {
   create,
   findByEmail,
+  findByPhone,
+  createWithPhone,
   findById,
   findByIds,
   updateById,

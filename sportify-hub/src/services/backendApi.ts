@@ -1,6 +1,6 @@
 // REST client — points to the Express + Firestore API in ./backend (port 5000).
 
-const BASE_URL = 'http://192.168.1.16:5000/api';
+const BASE_URL = 'http://192.168.1.135:5000/api';
 
 let _token: string | null = null;
 
@@ -32,6 +32,13 @@ export const apiLogin = async (email: string, password: string) => {
 export const apiRegister = async (name: string, email: string, password: string) => {
   const res = await fetch(`${BASE_URL}/auth/register`, {
     method: 'POST', headers: headers(), body: JSON.stringify({ name, email, password }),
+  });
+  return handleResponse(res);
+};
+
+export const apiPhoneAuth = async (phone: string, code: string, name?: string) => {
+  const res = await fetch(`${BASE_URL}/auth/phone-auth`, {
+    method: 'POST', headers: headers(), body: JSON.stringify({ phone, code, name }),
   });
   return handleResponse(res);
 };

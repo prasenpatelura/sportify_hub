@@ -7,17 +7,18 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { apiSendOtp } from '../../services/backendApi';
 import { colors } from '../../theme/colors';
 
 export default function LoginScreen() {
-  const { signIn, signUp, signInDemo } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { signInWithPhone, signInDemo } = useAuth();
   const [name, setName] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [devCode, setDevCode] = useState<string | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -39,31 +40,40 @@ export default function LoginScreen() {
     ).start();
   }, []);
 
-  const handleAuth = async () => {
-    if (!email || !password) {
-      Alert.alert('Missing Fields', 'Please fill in all required fields.');
-      return;
-    }
-    if (isSignUp && !name) {
-      Alert.alert('Missing Name', 'Please enter your full name.');
+  const handleSendCode = async () => {
+    if (!phone.trim()) {
+      Alert.alert('Missing Number', 'Please enter your phone number.');
       return;
     }
     setLoading(true);
     try {
-      if (isSignUp) {
-        await signUp(email.trim(), password, name.trim());
-      } else {
-        await signIn(email.trim(), password);
-      }
+      const res = await apiSendOtp(phone.trim());
+      setDevCode(res.devCode || null);
+      setStep('code');
     } catch (e: any) {
       Alert.alert(
-        'Sign In Failed',
+        'Could Not Send Code',
         'Could not connect to server. Please use Demo Mode to explore the app.',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Try Demo', onPress: handleDemo },
         ]
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!code.trim()) {
+      Alert.alert('Missing Code', 'Please enter the 6-digit code.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await signInWithPhone(phone.trim(), code.trim(), name.trim() || undefined);
+    } catch (e: any) {
+      Alert.alert('Verification Failed', e.message || 'Incorrect or expired code.');
     } finally {
       setLoading(false);
     }
@@ -80,11 +90,10 @@ export default function LoginScreen() {
     }
   };
 
-  const toggleMode = () => {
-    setIsSignUp(v => !v);
-    setName('');
-    setEmail('');
-    setPassword('');
+  const changeNumber = () => {
+    setStep('phone');
+    setCode('');
+    setDevCode(null);
   };
 
   return (
@@ -117,66 +126,91 @@ export default function LoginScreen() {
         {/* Form card */}
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
           <View style={styles.card}>
-            <Text style={styles.formTitle}>{isSignUp ? 'Create Account' : 'Welcome Back'}</Text>
-            <Text style={styles.formSubtitle}>
-              {isSignUp ? 'Join thousands of sports enthusiasts' : 'Sign in to continue your journey'}
-            </Text>
+            {step === 'phone' ? (
+              <>
+                <Text style={styles.formTitle}>Welcome</Text>
+                <Text style={styles.formSubtitle}>Sign in or create an account with your phone number</Text>
 
-            {isSignUp && (
-              <View style={styles.inputRow}>
-                <Ionicons name="person-outline" size={18} color={colors.textMuted} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Full Name"
-                  placeholderTextColor={colors.textMuted}
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                />
-              </View>
+                <View style={styles.inputRow}>
+                  <Ionicons name="person-outline" size={18} color={colors.textMuted} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Full Name (for new accounts)"
+                    placeholderTextColor={colors.textMuted}
+                    value={name}
+                    onChangeText={setName}
+                    autoCapitalize="words"
+                  />
+                </View>
+
+                <View style={styles.inputRow}>
+                  <Ionicons name="call-outline" size={18} color={colors.textMuted} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="+91 98765 43210"
+                    placeholderTextColor={colors.textMuted}
+                    value={phone}
+                    onChangeText={setPhone}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+
+                <TouchableOpacity style={styles.mainBtn} onPress={handleSendCode} disabled={loading || demoLoading} activeOpacity={0.85}>
+                  <LinearGradient
+                    colors={[colors.primary, '#2D8B30', colors.secondary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.mainBtnGrad}
+                  >
+                    {loading
+                      ? <ActivityIndicator color="#fff" />
+                      : <Text style={styles.mainBtnText}>Send OTP</Text>}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.formTitle}>Enter Verification Code</Text>
+                <Text style={styles.formSubtitle}>Sent to {phone}</Text>
+
+                {devCode && (
+                  <View style={styles.devBanner}>
+                    <Ionicons name="information-circle-outline" size={16} color={colors.warning} />
+                    <Text style={styles.devBannerText}>Demo mode (no SMS provider wired up) — your code is {devCode}</Text>
+                  </View>
+                )}
+
+                <View style={styles.inputRow}>
+                  <Ionicons name="keypad-outline" size={18} color={colors.textMuted} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="123456"
+                    placeholderTextColor={colors.textMuted}
+                    value={code}
+                    onChangeText={setCode}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                  />
+                </View>
+
+                <TouchableOpacity style={styles.mainBtn} onPress={handleVerify} disabled={loading || demoLoading} activeOpacity={0.85}>
+                  <LinearGradient
+                    colors={[colors.primary, '#2D8B30', colors.secondary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.mainBtnGrad}
+                  >
+                    {loading
+                      ? <ActivityIndicator color="#fff" />
+                      : <Text style={styles.mainBtnText}>Verify & Continue</Text>}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={changeNumber} style={styles.toggleRow}>
+                  <Text style={styles.toggleText}>Change phone number</Text>
+                </TouchableOpacity>
+              </>
             )}
-
-            <View style={styles.inputRow}>
-              <Ionicons name="mail-outline" size={18} color={colors.textMuted} />
-              <TextInput
-                style={styles.input}
-                placeholder="Email Address"
-                placeholderTextColor={colors.textMuted}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-
-            <View style={styles.inputRow}>
-              <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} />
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="Password"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry={!showPassword}
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(v => !v)}>
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.mainBtn} onPress={handleAuth} disabled={loading || demoLoading} activeOpacity={0.85}>
-              <LinearGradient
-                colors={[colors.primary, '#2D8B30', colors.secondary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.mainBtnGrad}
-              >
-                {loading
-                  ? <ActivityIndicator color="#fff" />
-                  : <Text style={styles.mainBtnText}>{isSignUp ? 'Create Account' : 'Sign In'}</Text>}
-              </LinearGradient>
-            </TouchableOpacity>
 
             {/* Stats strip */}
             <View style={styles.statsStrip}>
@@ -187,13 +221,6 @@ export default function LoginScreen() {
                 </View>
               ))}
             </View>
-
-            <TouchableOpacity onPress={toggleMode} style={styles.toggleRow}>
-              <Text style={styles.toggleText}>
-                {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
-                <Text style={styles.toggleLink}>{isSignUp ? 'Sign In' : 'Sign Up'}</Text>
-              </Text>
-            </TouchableOpacity>
 
             {/* Divider */}
             <View style={styles.dividerRow}>
@@ -236,6 +263,8 @@ const styles = StyleSheet.create({
   card: { borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(93,184,64,0.15)', padding: 26, backgroundColor: 'rgba(20,20,20,0.95)' },
   formTitle: { fontSize: 22, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 6 },
   formSubtitle: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginBottom: 24 },
+  devBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(245,158,11,0.1)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)', borderRadius: 12, padding: 10, marginBottom: 16 },
+  devBannerText: { color: colors.warning, fontSize: 12, flex: 1, fontWeight: '600' },
   inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(93,184,64,0.12)', paddingHorizontal: 14, marginBottom: 12, gap: 10 },
   input: { flex: 1, color: colors.text, paddingVertical: 14, fontSize: 15 },
   mainBtn: { borderRadius: 16, overflow: 'hidden', marginTop: 6, elevation: 10, shadowColor: colors.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 18 },
@@ -245,9 +274,8 @@ const styles = StyleSheet.create({
   statItem: { alignItems: 'center' },
   statVal: { fontSize: 18, fontWeight: '900', color: colors.secondary },
   statLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  toggleRow: { alignItems: 'center', paddingTop: 4 },
-  toggleText: { color: colors.textMuted, fontSize: 14 },
-  toggleLink: { color: colors.secondary, fontWeight: '700' },
+  toggleRow: { alignItems: 'center', paddingTop: 14 },
+  toggleText: { color: colors.secondary, fontSize: 14, fontWeight: '700' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 16, gap: 10 },
   dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
   dividerText: { color: colors.textMuted, fontSize: 12, fontWeight: '600' },

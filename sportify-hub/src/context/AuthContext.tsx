@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiLogin, apiRegister, setAuthToken } from '../services/backendApi';
+import { apiLogin, apiRegister, apiPhoneAuth, setAuthToken } from '../services/backendApi';
 
 export interface UserProfile {
   uid: string;
@@ -29,6 +29,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
+  signInWithPhone: (phone: string, code: string, name?: string) => Promise<void>;
   signInDemo: () => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (patch: Partial<UserProfile>) => Promise<void>;
@@ -111,6 +112,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await persist(token, profile);
   };
 
+  const signInWithPhone = async (phone: string, code: string, name?: string) => {
+    const data = await apiPhoneAuth(phone, code, name);
+    const token = data.token;
+    const profile = toProfile(data);
+    setAuthToken(token);
+    setUser({ uid: profile.uid, email: profile.email });
+    setUserProfile(profile);
+    await persist(token, profile);
+  };
+
   const signInDemo = async () => {
     setAuthToken('demo_token');
     setUser({ uid: DEMO_PROFILE.uid, email: DEMO_PROFILE.email });
@@ -138,7 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, signIn, signUp, signInDemo, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, signIn, signUp, signInWithPhone, signInDemo, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
