@@ -106,7 +106,6 @@ export default function FluidTabBar({ state, navigation }: any) {
                   {
                     opacity: scale,
                     color: '#fff',
-                    height: scale.interpolate({ inputRange: [0, 1], outputRange: [0, 14] }),
                   },
                 ]}
                 numberOfLines={1}
@@ -164,5 +163,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.3,
+    height: 14,
   },
 });
