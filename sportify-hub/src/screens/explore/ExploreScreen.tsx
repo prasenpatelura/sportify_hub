@@ -19,6 +19,7 @@ export default function ExploreScreen({ navigation }: any) {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [usingLocation, setUsingLocation] = useState(false);
+  const [showingNearby, setShowingNearby] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -26,9 +27,11 @@ export default function ExploreScreen({ navigation }: any) {
         const { coords, usingFallback } = await getCurrentCoords();
         const nearby = await getNearbyVenuesFromDB(coords.latitude, coords.longitude, 20000);
         setUsingLocation(!usingFallback);
+        setShowingNearby(nearby.length > 0);
         setVenues(nearby.length ? nearby : await getVenuesFromDB());
       } catch (e) {
         console.error(e);
+        setShowingNearby(false);
         setVenues(await getVenuesFromDB());
       } finally {
         setLoading(false);
@@ -103,7 +106,9 @@ export default function ExploreScreen({ navigation }: any) {
       <View style={styles.header}>
         <Text style={styles.title}>Explore</Text>
         <Text style={styles.subtitle}>
-          {filtered.length} venues near you {usingLocation ? '' : '(enable location for real distances)'}
+          {showingNearby
+            ? `${filtered.length} venues near you ${usingLocation ? '' : '(enable location for real distances)'}`
+            : `${filtered.length} venues · none within range, showing all`}
         </Text>
       </View>
 

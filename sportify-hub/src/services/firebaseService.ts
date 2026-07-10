@@ -3,9 +3,10 @@
 
 import {
   apiGetVenues, apiGetVenueById, apiGetNearbyVenues, apiGetGames, apiGetNearbyGames,
-  apiJoinGame, apiCreateBooking, apiGetUserBookings, apiGetBookingById,
+  apiJoinGame, apiQuickJoinGame, apiCreateBooking, apiGetUserBookings, apiGetBookingById,
+  apiGetPlayersByIds,
 } from './backendApi';
-import { venues as mockVenues, games as mockGames, bookings as mockBookings } from '../mock/data';
+import { venues as mockVenues, games as mockGames, bookings as mockBookings, users as mockUsers } from '../mock/data';
 
 // Normalise venues so both data shapes work (backend & mock)
 const normaliseVenue = (v: any) => ({
@@ -31,6 +32,8 @@ const normaliseGame = (g: any) => ({
   maxPlayers: g.maxPlayers || 10,
   status: g.status || 'open',
   distanceKm: g.distanceKm,
+  hostId: typeof g.hostId === 'object' ? g.hostId?._id : g.hostId,
+  hostName: typeof g.hostId === 'object' ? g.hostId?.name : undefined,
 });
 
 let _listeners: Array<(games: any[]) => void> = [];
@@ -118,6 +121,35 @@ export const joinGameInDB = async (gameId: string, userId: string): Promise<void
     await apiJoinGame(gameId, userId);
   } catch (e: any) {
     throw new Error(e.message || 'Could not join game');
+  }
+};
+
+// Matches the caller into an open game for `sport` instantly. Throws if none is available.
+export const quickJoinGameInDB = async (userId: string, sport: string): Promise<{ gameId: string; message: string }> => {
+  const data = await apiQuickJoinGame(userId, sport);
+  if (!data.success) throw new Error(data.message || 'No available games found for Quick Play.');
+  return { gameId: data.gameId, message: data.message };
+};
+
+// Resolves player uids to display names for a match roster. Falls back to the
+// mock user list (id-keyed) so the roster still renders something offline.
+export const getPlayersByIdsFromDB = async (ids: string[]): Promise<Record<string, { name: string; avatar?: string }>> => {
+  const unique = [...new Set(ids)].filter(Boolean);
+  if (!unique.length) return {};
+  try {
+    const data = await apiGetPlayersByIds(unique);
+    const map: Record<string, { name: string; avatar?: string }> = {};
+    (Array.isArray(data) ? data : []).forEach((u: any) => {
+      map[u._id || u.id] = { name: u.name, avatar: u.avatar };
+    });
+    return map;
+  } catch {
+    const map: Record<string, { name: string; avatar?: string }> = {};
+    unique.forEach(id => {
+      const mockUser = mockUsers.find(u => u.id === id);
+      if (mockUser) map[id] = { name: mockUser.name };
+    });
+    return map;
   }
 };
 

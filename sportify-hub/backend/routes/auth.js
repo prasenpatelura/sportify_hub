@@ -51,6 +51,23 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.put('/password', async (req, res) => {
+  const { userId, currentPassword, newPassword } = req.body;
+  if (!userId || !currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'userId, currentPassword and newPassword are required' });
+  }
+  try {
+    const user = await User.findById(userId);
+    if (!user || !(await User.verifyPassword(user, currentPassword))) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+    await User.updatePassword(userId, newPassword);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.get('/profile', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'No token' });

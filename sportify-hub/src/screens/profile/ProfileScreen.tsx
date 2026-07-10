@@ -12,7 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }: any) {
   const { userProfile, logout } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -30,12 +30,12 @@ export default function ProfileScreen() {
   const xpPercent = userProfile ? userProfile.xp / userProfile.nextLevelXp : 0;
 
   const menuItems = [
-    { icon: 'person-outline', label: 'Edit Profile', color: colors.secondary, onPress: undefined },
-    { icon: 'trophy-outline', label: 'My Tournaments', color: '#f59e0b', onPress: undefined },
-    { icon: 'wallet-outline', label: 'Payments & Subscriptions', color: '#10b981', onPress: undefined },
-    { icon: 'notifications-outline', label: 'Notifications', color: colors.primary, onPress: undefined },
-    { icon: 'shield-checkmark-outline', label: 'Privacy & Security', color: '#8b5cf6', onPress: undefined },
-    { icon: 'help-circle-outline', label: 'Help & Support', color: colors.textMuted, onPress: undefined },
+    { icon: 'person-outline', label: 'Edit Profile', color: colors.secondary, onPress: () => navigation.navigate('EditProfile') },
+    { icon: 'trophy-outline', label: 'My Tournaments', color: '#f59e0b', onPress: () => navigation.navigate('MyTournaments') },
+    { icon: 'wallet-outline', label: 'Payments & Subscriptions', color: '#10b981', onPress: () => navigation.navigate('Payments') },
+    { icon: 'notifications-outline', label: 'Notifications', color: colors.primary, onPress: () => navigation.navigate('Notifications') },
+    { icon: 'shield-checkmark-outline', label: 'Privacy & Security', color: '#8b5cf6', onPress: () => navigation.navigate('PrivacySecurity') },
+    { icon: 'help-circle-outline', label: 'Help & Support', color: colors.textMuted, onPress: () => navigation.navigate('HelpSupport') },
   ];
 
   return (
@@ -46,7 +46,7 @@ export default function ProfileScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>My Profile</Text>
-            <TouchableOpacity style={styles.settingsBtn}>
+            <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('PrivacySecurity')}>
               <Ionicons name="settings-outline" size={22} color={colors.textMuted} />
             </TouchableOpacity>
           </View>

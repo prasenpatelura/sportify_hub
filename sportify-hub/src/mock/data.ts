@@ -44,7 +44,7 @@ export const venues: Venue[] = [
   {
     id: "1",
     name: "Elite Turf",
-    location: "Hyderabad",
+    location: "Gachibowli, Hyderabad",
     price: 800,
     rating: 4.5,
     image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55',
@@ -53,7 +53,7 @@ export const venues: Venue[] = [
   {
     id: "2",
     name: "Smash Arena",
-    location: "Bangalore",
+    location: "Kondapur, Hyderabad",
     price: 500,
     rating: 4.8,
     image: 'https://images.unsplash.com/photo-1622279457486-640c4cb4ebf6',
@@ -62,7 +62,7 @@ export const venues: Venue[] = [
   {
     id: "3",
     name: "Hoops Court",
-    location: "Mumbai",
+    location: "Banjara Hills, Hyderabad",
     price: 1200,
     rating: 4.1,
     image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc',

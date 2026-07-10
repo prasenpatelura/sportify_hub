@@ -5,9 +5,9 @@ export interface Coords {
   longitude: number;
 }
 
-// Bangalore center — used as a fallback so the nearby-venues/games UI still
+// Hyderabad center — used as a fallback so the nearby-venues/games UI still
 // has something sensible to show on web or when the user denies permission.
-export const FALLBACK_COORDS: Coords = { latitude: 12.9716, longitude: 77.5946 };
+export const FALLBACK_COORDS: Coords = { latitude: 17.3850, longitude: 78.4867 };
 
 export async function getCurrentCoords(): Promise<{ coords: Coords; usingFallback: boolean }> {
   try {

@@ -41,6 +41,19 @@ export const apiGetProfile = async () => {
   return handleResponse(res);
 };
 
+export const apiChangePassword = async (userId: string, currentPassword: string, newPassword: string) => {
+  const res = await fetch(`${BASE_URL}/auth/password`, {
+    method: 'PUT', headers: headers(), body: JSON.stringify({ userId, currentPassword, newPassword }),
+  });
+  return handleResponse(res);
+};
+
+// ─── Players ─────────────────────────────────────────────────────────────────
+export const apiGetPlayersByIds = async (ids: string[]) => {
+  const res = await fetch(`${BASE_URL}/players?ids=${ids.join(',')}`, { headers: headers() });
+  return handleResponse(res);
+};
+
 // ─── Venues ──────────────────────────────────────────────────────────────────
 export const apiGetVenues = async () => {
   const res = await fetch(`${BASE_URL}/venues`, { headers: headers() });
@@ -71,6 +84,13 @@ export const apiGetNearbyGames = async (lat: number, lng: number, radius = 10000
 export const apiJoinGame = async (gameId: string, userId: string) => {
   const res = await fetch(`${BASE_URL}/games/${gameId}/join`, {
     method: 'POST', headers: headers(), body: JSON.stringify({ userId }),
+  });
+  return handleResponse(res);
+};
+
+export const apiQuickJoinGame = async (userId: string, sport: string) => {
+  const res = await fetch(`${BASE_URL}/games/quick-join`, {
+    method: 'POST', headers: headers(), body: JSON.stringify({ userId, sport }),
   });
   return handleResponse(res);
 };

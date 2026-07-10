@@ -2,6 +2,19 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
+// GET /api/players?ids=id1,id2,id3 — batch-fetch player names/avatars (e.g. a match roster)
+router.get('/', async (req, res) => {
+  try {
+    const { ids } = req.query;
+    if (!ids) return res.status(400).json({ message: 'ids query param is required' });
+
+    const users = await User.findByIds(String(ids).split(','));
+    res.json(users.map(User.omitPassword));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // PUT /api/players/location — update current user location
 router.put('/location', async (req, res) => {
   try {

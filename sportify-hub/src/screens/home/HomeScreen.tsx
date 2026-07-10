@@ -185,7 +185,12 @@ export default function HomeScreen({ navigation }: any) {
                 <Text style={styles.emptyText}>No live games right now.</Text>
               ) : (
                 games.map(game => (
-                  <GlassCard key={game.id} style={styles.gameCard}>
+                  <TouchableOpacity
+                    key={game.id}
+                    activeOpacity={0.92}
+                    onPress={() => navigation.navigate('GameDetails', { game })}
+                  >
+                  <GlassCard style={styles.gameCard}>
                     <View style={styles.gameTop}>
                       <View style={styles.gameIconBg}>
                         <Ionicons name={SPORT_ICONS[game.sport] || 'football-outline'} size={22} color={colors.secondary} />
@@ -207,12 +212,13 @@ export default function HomeScreen({ navigation }: any) {
                       <Ionicons name="location-outline" size={14} color={colors.textMuted} style={{ marginLeft: 12 }} />
                       <Text style={styles.gameInfoText}>{game.location || 'Elite Turf'}</Text>
                     </View>
-                    <TouchableOpacity onPress={() => navigation.navigate('Play')} activeOpacity={0.85}>
+                    <TouchableOpacity onPress={() => navigation.navigate('GameDetails', { game })} activeOpacity={0.85}>
                       <LinearGradient colors={[colors.primary, colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.joinBtn}>
                         <Text style={styles.joinBtnText}>Join Match</Text>
                       </LinearGradient>
                     </TouchableOpacity>
                   </GlassCard>
+                  </TouchableOpacity>
                 ))
               )}
             </View>
@@ -221,7 +227,7 @@ export default function HomeScreen({ navigation }: any) {
       </ScrollView>
 
       {/* ── Quick Play FAB ──────────────────────────────────── */}
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('Play')} activeOpacity={0.88}>
+      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('QuickPlay')} activeOpacity={0.88}>
         <LinearGradient colors={[colors.primary, '#7c3aed', colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.fabGrad}>
           <Ionicons name="flash" size={20} color="#fff" />
           <Text style={styles.fabText}>QUICK PLAY</Text>

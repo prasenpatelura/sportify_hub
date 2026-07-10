@@ -70,6 +70,11 @@ async function updateById(id, fields) {
   return toUser(await ref.get());
 }
 
+async function updatePassword(id, newPassword) {
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  return updateById(id, { password: passwordHash });
+}
+
 async function incrementXpAndMatches(ids, { xp = 0, matchesPlayed = 0 }) {
   const unique = [...new Set(ids.map(String))].filter(Boolean);
   if (!unique.length) return;
@@ -114,6 +119,7 @@ module.exports = {
   findById,
   findByIds,
   updateById,
+  updatePassword,
   incrementXpAndMatches,
   omitPassword,
   findNearby,

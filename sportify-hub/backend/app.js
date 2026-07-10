@@ -16,6 +16,7 @@ app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/games',    require('./routes/games'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/stats',    require('./routes/stats'));
+app.use('/api/players',  require('./routes/players'));
 
 app.get('/', (_req, res) => res.send('Sportify Hub API is running ✓'));
 

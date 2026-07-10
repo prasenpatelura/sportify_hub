@@ -26,7 +26,7 @@ const LEVEL_COLORS: Record<string, string> = {
   Advanced: '#ef4444',
 };
 
-export default function PlayScreen() {
+export default function PlayScreen({ navigation }: any) {
   const { user } = useAuth();
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +84,7 @@ export default function PlayScreen() {
     const levelColor = LEVEL_COLORS[item.level] || colors.secondary;
 
     return (
+      <TouchableOpacity activeOpacity={0.92} onPress={() => navigation.navigate('GameDetails', { game: item })}>
       <GlassCard style={styles.card}>
         {/* Header row */}
         <View style={styles.cardTop}>
@@ -142,7 +143,7 @@ export default function PlayScreen() {
 
         {/* Join button */}
         <TouchableOpacity
-          onPress={() => handleJoin(item)}
+          onPress={(e) => { e.stopPropagation(); handleJoin(item); }}
           disabled={joiningId === item.id || full || joined}
           style={{ borderRadius: 12, overflow: 'hidden', marginTop: 12 }}
           activeOpacity={0.85}
@@ -169,6 +170,7 @@ export default function PlayScreen() {
           </LinearGradient>
         </TouchableOpacity>
       </GlassCard>
+      </TouchableOpacity>
     );
   };
 

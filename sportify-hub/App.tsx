@@ -11,6 +11,14 @@ import LoginScreen from './src/screens/auth/LoginScreen';
 import VenueDetailsScreen from './src/screens/explore/VenueDetailsScreen';
 import BookingScreen from './src/screens/explore/BookingScreen';
 import BookingDetailsScreen from './src/screens/activity/BookingDetailsScreen';
+import GameDetailsScreen from './src/screens/play/GameDetailsScreen';
+import QuickPlayScreen from './src/screens/home/QuickPlayScreen';
+import EditProfileScreen from './src/screens/profile/EditProfileScreen';
+import MyTournamentsScreen from './src/screens/profile/MyTournamentsScreen';
+import PaymentsScreen from './src/screens/profile/PaymentsScreen';
+import NotificationsScreen from './src/screens/profile/NotificationsScreen';
+import PrivacySecurityScreen from './src/screens/profile/PrivacySecurityScreen';
+import HelpSupportScreen from './src/screens/profile/HelpSupportScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +43,14 @@ function AppNavigator() {
           <Stack.Screen name="VenueDetails" component={VenueDetailsScreen} />
           <Stack.Screen name="BookingUI" component={BookingScreen} />
           <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
+          <Stack.Screen name="GameDetails" component={GameDetailsScreen} />
+          <Stack.Screen name="QuickPlay" component={QuickPlayScreen} options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+          <Stack.Screen name="MyTournaments" component={MyTournamentsScreen} />
+          <Stack.Screen name="Payments" component={PaymentsScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
+          <Stack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} />
+          <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
         </>
       )}
     </Stack.Navigator>

@@ -9,7 +9,7 @@ async function seedIfEmpty() {
   const venues = await Venue.insertMany([
     {
       name: 'Neon Arena',
-      location: { address: 'Indiranagar, Bangalore', lat: 12.9784, lng: 77.6408 },
+      location: { address: 'Gachibowli, Hyderabad', lat: 17.4401, lng: 78.3489 },
       sports: ['Football', 'Tennis'],
       pricePerHour: 1500,
       rating: 4.8,
@@ -18,7 +18,7 @@ async function seedIfEmpty() {
     },
     {
       name: 'Skyline Sports Hub',
-      location: { address: 'Koramangala, Bangalore', lat: 12.9352, lng: 77.6245 },
+      location: { address: 'Kondapur, Hyderabad', lat: 17.4615, lng: 78.3672 },
       sports: ['Basketball', 'Badminton'],
       pricePerHour: 800,
       rating: 4.5,
@@ -27,7 +27,7 @@ async function seedIfEmpty() {
     },
     {
       name: 'Velocity Turf',
-      location: { address: 'Whitefield, Bangalore', lat: 12.9698, lng: 77.7500 },
+      location: { address: 'Banjara Hills, Hyderabad', lat: 17.4156, lng: 78.4347 },
       sports: ['Football', 'Cricket'],
       pricePerHour: 2000,
       rating: 4.9,
