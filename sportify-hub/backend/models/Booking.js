@@ -6,7 +6,28 @@ const COLLECTION = 'bookings';
 const col = () => db.collection(COLLECTION);
 const toBooking = docToObject;
 
+// Single-field query (matches the rest of this file) so no Firestore composite
+// index is needed — date/timeSlot filtering happens in application code.
+async function findByVenueId(venueId) {
+  const snap = await col().where('venueId', '==', String(venueId)).get();
+  return snap.docs.map(toBooking);
+}
+
+async function findByVenueAndDate(venueId, date) {
+  const bookings = await findByVenueId(venueId);
+  return bookings.filter((b) => b.date === date && b.status !== 'Cancelled');
+}
+
 async function create(data) {
+  const { venueId, date, timeSlot } = data;
+  if (venueId && date && timeSlot) {
+    const existing = await findByVenueAndDate(venueId, date);
+    if (existing.some((b) => b.timeSlot === timeSlot)) {
+      const err = new Error('This time slot was just booked by someone else. Please pick another.');
+      err.status = 409;
+      throw err;
+    }
+  }
   const now = new Date();
   const ref = await col().add({ status: 'Confirmed', ...data, createdAt: now, updatedAt: now });
   return toBooking(await ref.get());
@@ -38,4 +59,4 @@ async function deleteById(id) {
   return toBooking(snap);
 }
 
-module.exports = { create, findByUserId, findById, deleteById };
+module.exports = { create, findByUserId, findById, findByVenueAndDate, deleteById };

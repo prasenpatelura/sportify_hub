@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Image, TouchableOpacity,
-  ScrollView, ActivityIndicator, Dimensions, Animated,
+  ScrollView, ActivityIndicator, Dimensions, Animated, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +12,11 @@ import { useAuth } from '../../context/AuthContext';
 import GlassCard from '../../components/ui/GlassCard';
 
 const { width } = Dimensions.get('window');
+
+// FluidTabBar floats as an absolutely-positioned pill (16 side margin, 64 tall,
+// bottom-offset 30 on iOS / 16 on Android) — the FAB must clear its top edge
+// plus a gap, or it renders underneath the tab bar's blur overlay.
+const FAB_BOTTOM = (Platform.OS === 'ios' ? 30 : 16) + 64 + 14;
 
 const SPORT_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   Football: 'football',
@@ -239,7 +244,7 @@ export default function HomeScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingBottom: 130 },
+  scroll: { paddingBottom: 190 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, marginBottom: 18 },
   greeting: { fontSize: 22, fontWeight: '900', color: colors.text },
   name: { color: colors.secondary },
@@ -296,7 +301,7 @@ const styles = StyleSheet.create({
   joinBtn: { borderRadius: 12, paddingVertical: 11, alignItems: 'center' },
   joinBtnText: { color: '#fff', fontWeight: '800', fontSize: 14, letterSpacing: 0.3 },
   emptyText: { color: colors.textMuted, textAlign: 'center', paddingVertical: 30 },
-  fab: { position: 'absolute', bottom: 28, right: 20, left: 20, height: 58, borderRadius: 29, overflow: 'hidden', elevation: 12, shadowColor: colors.primary, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.4, shadowRadius: 20 },
+  fab: { position: 'absolute', bottom: FAB_BOTTOM, right: 20, left: 20, height: 58, borderRadius: 29, overflow: 'hidden', elevation: 20, zIndex: 50, shadowColor: colors.primary, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.4, shadowRadius: 20 },
   fabGrad: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   fabText: { color: '#fff', fontWeight: '900', fontSize: 15, letterSpacing: 1 },
 });

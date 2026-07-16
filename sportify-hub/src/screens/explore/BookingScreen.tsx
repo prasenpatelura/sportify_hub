@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { bookSlotInDB } from '../../services/firebaseService';
+import { bookSlotInDB, getBookedSlotsFromDB } from '../../services/firebaseService';
 import { useAuth } from '../../context/AuthContext';
 import { colors } from '../../theme/colors';
 import GlassCard from '../../components/ui/GlassCard';
@@ -26,10 +26,39 @@ export default function BookingScreen({ route, navigation }: any) {
   const [selectedIso, setSelectedIso] = useState(dates[0].iso);
   const [selectedSlot, setSelectedSlot] = useState('');
   const [loading, setLoading] = useState(false);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(true);
+
+  const refreshBookedSlots = async () => {
+    setLoadingSlots(true);
+    try {
+      const slots = await getBookedSlotsFromDB(venueId, selectedIso);
+      setBookedSlots(slots);
+      setSelectedSlot(prev => (prev && slots.includes(prev) ? '' : prev));
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingSlots(true);
+    getBookedSlotsFromDB(venueId, selectedIso).then((slots) => {
+      if (cancelled) return;
+      setBookedSlots(slots);
+      setSelectedSlot(prev => (prev && slots.includes(prev) ? '' : prev));
+      setLoadingSlots(false);
+    });
+    return () => { cancelled = true; };
+  }, [venueId, selectedIso]);
 
   const handleConfirm = async () => {
     if (!selectedSlot) {
       Alert.alert('Error', 'Please select a time slot');
+      return;
+    }
+    if (bookedSlots.includes(selectedSlot)) {
+      Alert.alert('Slot Unavailable', 'This time slot is already booked. Please choose another.');
       return;
     }
     setLoading(true);
@@ -39,9 +68,11 @@ export default function BookingScreen({ route, navigation }: any) {
         { text: 'View Details', onPress: () => navigation.replace('BookingDetails', { bookingId: booking.id }) },
         { text: 'OK', onPress: () => navigation.navigate('MainApp', { screen: 'Activity' }) },
       ]);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      Alert.alert('Error', 'Something went wrong');
+      // Someone else may have just taken this slot — refresh so the grid reflects it.
+      await refreshBookedSlots();
+      Alert.alert('Could Not Book Slot', e.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -80,17 +111,27 @@ export default function BookingScreen({ route, navigation }: any) {
           ))}
         </ScrollView>
 
-        <Text style={styles.sectionTitle}>Available Slots</Text>
+        <View style={styles.slotsHeaderRow}>
+          <Text style={styles.sectionTitle}>Available Slots</Text>
+          {loadingSlots && <ActivityIndicator size="small" color={colors.secondary} />}
+        </View>
         <View style={styles.slotsContainer}>
-          {TIME_SLOTS.map((slot) => (
-            <TouchableOpacity 
-              key={slot} 
-              onPress={() => setSelectedSlot(slot)}
-              style={[styles.slotItem, selectedSlot === slot && styles.selectedSlotItem]}
-            >
-              <Text style={[styles.slotText, selectedSlot === slot && styles.selectedText]}>{slot}</Text>
-            </TouchableOpacity>
-          ))}
+          {TIME_SLOTS.map((slot) => {
+            const isBooked = bookedSlots.includes(slot);
+            return (
+              <TouchableOpacity
+                key={slot}
+                onPress={() => !isBooked && setSelectedSlot(slot)}
+                disabled={isBooked}
+                style={[styles.slotItem, selectedSlot === slot && styles.selectedSlotItem, isBooked && styles.bookedSlotItem]}
+              >
+                <Text style={[styles.slotText, selectedSlot === slot && styles.selectedText, isBooked && styles.bookedSlotText]}>
+                  {slot}
+                </Text>
+                {isBooked && <Text style={styles.bookedLabel}>Booked</Text>}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <GlassCard style={styles.summaryCard}>
@@ -124,6 +165,7 @@ const styles = StyleSheet.create({
   directionsButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0, 212, 255, 0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0, 212, 255, 0.3)' },
   directionsText: { color: colors.secondary, fontSize: 12, fontWeight: 'bold', marginLeft: 4 },
   sectionTitle: { fontSize: 18, color: colors.text, fontWeight: '600', marginBottom: 15 },
+  slotsHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   datesContainer: { marginBottom: 30 },
   dateCard: { width: 60, height: 80, backgroundColor: colors.surface, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 15, borderWidth: 1, borderColor: colors.surfaceLight },
   selectedDateCard: { backgroundColor: colors.primary, borderColor: colors.primaryLight },
@@ -133,7 +175,10 @@ const styles = StyleSheet.create({
   slotsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 30 },
   slotItem: { paddingHorizontal: 20, paddingVertical: 12, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.surfaceLight, minWidth: '45%' },
   selectedSlotItem: { backgroundColor: colors.secondary, borderColor: colors.secondary },
+  bookedSlotItem: { backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.04)', opacity: 0.55 },
   slotText: { color: colors.text, fontSize: 14, textAlign: 'center' },
+  bookedSlotText: { color: colors.textMuted, textDecorationLine: 'line-through' },
+  bookedLabel: { color: colors.error, fontSize: 10, fontWeight: '800', textAlign: 'center', marginTop: 3, letterSpacing: 0.5 },
   summaryCard: { marginTop: 20 },
   summaryTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text, marginBottom: 15 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },

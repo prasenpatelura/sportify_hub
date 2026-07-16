@@ -4,7 +4,7 @@
 import {
   apiGetVenues, apiGetVenueById, apiGetNearbyVenues, apiGetGames, apiGetNearbyGames,
   apiJoinGame, apiQuickJoinGame, apiCreateBooking, apiGetUserBookings, apiGetBookingById,
-  apiGetPlayersByIds,
+  apiGetPlayersByIds, apiGetVenueBookings,
 } from './backendApi';
 import { venues as mockVenues, games as mockGames, bookings as mockBookings, users as mockUsers } from '../mock/data';
 
@@ -154,6 +154,9 @@ export const getPlayersByIdsFromDB = async (ids: string[]): Promise<Record<strin
 };
 
 // ─── Bookings ────────────────────────────────────────────────────────────────
+// No offline fallback here: a slot booking is a real write that can conflict
+// with another player's booking, so failures (including "slot taken") must
+// surface to the user instead of silently reporting a fake success.
 export const bookSlotInDB = async (
   userId: string,
   venueId: string,
@@ -161,11 +164,19 @@ export const bookSlotInDB = async (
   date: string,
   timeSlot: string
 ): Promise<any> => {
+  const booking = await apiCreateBooking({ userId, venueId, date, timeSlot });
+  return { ...booking, id: booking._id || booking.id };
+};
+
+// Returns the time slots already booked for a venue on a given date, so the
+// booking screen can grey them out instead of only finding out on submit.
+// This is a read, so it's fine to fall back to the mock bookings list offline.
+export const getBookedSlotsFromDB = async (venueId: string, date: string): Promise<string[]> => {
   try {
-    const booking = await apiCreateBooking({ userId, venueId, date, timeSlot });
-    return { ...booking, id: booking._id || booking.id };
+    const data = await apiGetVenueBookings(venueId, date);
+    return (Array.isArray(data) ? data : []).map((b: any) => b.timeSlot);
   } catch {
-    return { id: `b${Date.now()}`, userId, venueId, venueName, date, timeSlot, status: 'Confirmed' };
+    return mockBookings.filter(b => b.venueId === venueId && b.date === date).map(b => b.timeSlot);
   }
 };
 

@@ -8,7 +8,7 @@ router.post('/', async (req, res) => {
     const booking = await Booking.create(req.body);
     res.status(201).json(booking);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(error.status || 400).json({ message: error.message });
   }
 });
 
@@ -16,6 +16,19 @@ router.post('/', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
   try {
     const bookings = await Booking.findByUserId(req.params.userId);
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get already-booked slots for a venue on a given date — lets the client grey
+// out taken time slots instead of only finding out about a clash on submit.
+router.get('/venue/:venueId', async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) return res.status(400).json({ message: 'date query param is required' });
+    const bookings = await Booking.findByVenueAndDate(req.params.venueId, String(date));
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ message: error.message });

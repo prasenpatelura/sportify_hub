@@ -114,3 +114,8 @@ export const apiGetBookingById = async (id: string) => {
   const res = await fetch(`${BASE_URL}/bookings/${id}`, { headers: headers() });
   return handleResponse(res);
 };
+
+export const apiGetVenueBookings = async (venueId: string, date: string) => {
+  const res = await fetch(`${BASE_URL}/bookings/venue/${venueId}?date=${date}`, { headers: headers() });
+  return handleResponse(res);
+};
